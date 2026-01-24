@@ -1,0 +1,105 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// User model - Core authentication and user management
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  passwordHash String
+  accounts     Account[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("users")
+}
+
+// Account model - Utility accounts (GAS, WATER) with Plaid banking integration
+model Account {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String   // "GAS" or "WATER"
+  meterNumber String
+  address     String
+
+  // Plaid/Banking integration fields
+  plaidAccessToken String?
+  plaidItemId      String?
+  bankName         String?
+
+  // Relations
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bills      Bill[]
+  usageLogs  UsageLog[]
+
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@map("accounts")
+}
+
+// AccountType values: "GAS", "WATER"
+
+// Bill model - Utility bills with payment status tracking
+model Bill {
+  id        String      @id @default(cuid())
+  accountId String
+  amount    Float       // USD amount
+  status    String      @default("UNPAID")  // "UNPAID", "PENDING_SETTLEMENT", "PAID"
+  dueDate   DateTime
+
+  // Relations
+  account      Account              @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  transactions PaymentTransaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("bills")
+}
+
+// BillStatus values: "UNPAID", "PENDING_SETTLEMENT", "PAID"
+
+// PaymentTransaction model - Tracks crypto-backed payment settlement flow
+model PaymentTransaction {
+  id                 String                  @id @default(cuid())
+  billId             String
+  plaidTransactionId String?                 // Fiat transaction ID from Plaid
+  cryptoTxHash       String?                 // Blockchain transaction hash
+  status             String                  @default("INITIATED")  // "INITIATED", "FIAT_CONFIRMED", "CRYPTO_SETTLED"
+
+  // Relations
+  bill Bill @relation(fields: [billId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("payment_transactions")
+}
+
+// PaymentTransactionStatus values: "INITIATED", "FIAT_CONFIRMED", "CRYPTO_SETTLED"
+
+// UsageLog model - Tracks utility consumption (Therms for gas, Gallons for water)
+model UsageLog {
+  id        String   @id @default(cuid())
+  accountId String
+  date      DateTime
+  value     Float    // Consumption amount
+  unit      String   // "Therms" for gas, "Gallons" for water
+
+  // Relations
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@map("usage_logs")
+}

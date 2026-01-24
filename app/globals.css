@@ -1,0 +1,133 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
+
+body {
+    font-family: 'Montserrat', sans-serif;
+}
+
+.chart-container {
+    position: relative;
+    width: 100%;
+    height: 350px;
+}
+
+/* Utilyze Branding Colors */
+:root {
+    --utilize-black: #1a1a1a;
+    --utilize-gold: #fbbf24;
+}
+
+.nav-item.active {
+    background-color: #1a1a1a;
+    color: white;
+    border-left: 4px solid #fbbf24;
+}
+
+.nav-item:hover:not(.active) {
+    background-color: #f3f4f6;
+}
+
+/* AI Loading Animation */
+.typing-indicator span {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background-color: #1a1a1a;
+    border-radius: 50%;
+    animation: typing 1s infinite ease-in-out;
+    margin: 0 2px;
+}
+
+.typing-indicator span:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.typing-indicator span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes typing {
+    0% {
+        transform: scale(1);
+        opacity: 0.5;
+    }
+
+    50% {
+        transform: scale(1.5);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 0.5;
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Utility specific colors */
+.gas-theme {
+    color: #ea580c;
+    background-color: #fff7ed;
+    border-color: #fed7aa;
+}
+
+.water-theme {
+    color: #0284c7;
+    background-color: #f0f9ff;
+    border-color: #bae6fd;
+}
+
+/* Markdown-like styling for AI responses */
+.ai-content strong {
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+.ai-content ul {
+    list-style-type: disc;
+    padding-left: 1.5rem;
+    margin-top: 0.5rem;
+}
+
+.ai-content li {
+    margin-bottom: 0.25rem;
+}
+
+/* Scale up animation for modals */
+@keyframes scale-up {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.animate-scale-up {
+    animation: scale-up 0.2s ease-out;
+}
