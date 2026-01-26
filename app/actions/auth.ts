@@ -1,10 +1,8 @@
 'use server';
 
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { auth } from '@/lib/auth';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 /**
  * Register a new user

@@ -15,15 +15,23 @@ export function middleware(request: NextRequest) {
 
     const hasSession = !!sessionCookie;
 
+    console.log('Middleware:', {
+        pathname: request.nextUrl.pathname,
+        isAuthPage,
+        isProtectedRoute,
+        hasSession,
+        searchParams: request.nextUrl.searchParams.toString()
+    });
+
     // Redirect to login if accessing protected route without session
     if (isProtectedRoute && !hasSession) {
+        console.log('Redirecting to login - no session');
         return NextResponse.redirect(new URL('/login', request.url));
     }
 
-    // Redirect to dashboard if logged in and trying to access auth pages
-    if (isAuthPage && hasSession) {
-        return NextResponse.redirect(new URL('/dashboard', request.url));
-    }
+    // Note: We removed the redirect from auth pages to dashboard
+    // This allows logout to work properly. Users will be redirected
+    // to dashboard by the login page itself if they're already logged in
 
     return NextResponse.next();
 }

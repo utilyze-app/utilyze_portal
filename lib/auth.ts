@@ -1,9 +1,7 @@
 import NextAuth, { NextAuthConfig } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
-
-const prisma = new PrismaClient();
+import { prisma } from './prisma';
 
 export const authConfig: NextAuthConfig = {
     providers: [
@@ -58,6 +56,17 @@ export const authConfig: NextAuthConfig = {
                 session.user.id = token.id as string;
             }
             return session;
+        },
+        async redirect({ url, baseUrl }) {
+            // Redirect to login page after signOut
+            if (url.startsWith(baseUrl)) {
+                return url;
+            }
+            // If the URL is relative, allow it
+            if (url.startsWith('/')) {
+                return `${baseUrl}${url}`;
+            }
+            return baseUrl;
         },
     },
     session: {

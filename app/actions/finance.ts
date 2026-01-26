@@ -1,10 +1,8 @@
 'use server';
 
 import { Configuration, PlaidApi, PlaidEnvironments, Products, CountryCode } from 'plaid';
-import { PrismaClient } from '@prisma/client';
 import { auth } from '@/lib/auth';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 // Initialize Plaid Client
 const plaidConfig = new Configuration({

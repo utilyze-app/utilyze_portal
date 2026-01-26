@@ -1,13 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { signOut } from 'next-auth/react';
 
 export default function Sidebar() {
     const pathname = usePathname();
-    const router = useRouter();
 
     const navItems = [
         { name: 'Dashboard', path: '/dashboard', icon: 'fa-home' },
@@ -15,9 +14,10 @@ export default function Sidebar() {
         { name: 'Usage & History', path: '/usage', icon: 'fa-chart-line' },
     ];
 
-    const handleLogout = async () => {
-        await signOut({ redirect: false });
-        router.push('/login');
+    const handleLogout = () => {
+        console.log('Logout button clicked, calling signOut...');
+        signOut({ callbackUrl: '/login' });
+        console.log('signOut called with callbackUrl: /login');
     };
 
     return (

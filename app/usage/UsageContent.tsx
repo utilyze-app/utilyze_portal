@@ -211,8 +211,8 @@ export default function UsageContent() {
                     <button
                         onClick={() => toggleType('GAS')}
                         className={`px-4 py-2 rounded text-sm font-medium transition-all flex items-center ${currentType === 'GAS'
-                                ? 'bg-white text-orange-600 shadow-sm'
-                                : 'text-slate-500 hover:text-orange-600'
+                            ? 'bg-white text-orange-600 shadow-sm'
+                            : 'text-slate-500 hover:text-orange-600'
                             }`}
                     >
                         <i className="fas fa-fire mr-2"></i> Gas (MJ)
@@ -220,8 +220,8 @@ export default function UsageContent() {
                     <button
                         onClick={() => toggleType('WATER')}
                         className={`px-4 py-2 rounded text-sm font-medium transition-all flex items-center ${currentType === 'WATER'
-                                ? 'bg-white text-blue-600 shadow-sm'
-                                : 'text-slate-500 hover:text-blue-600'
+                            ? 'bg-white text-blue-600 shadow-sm'
+                            : 'text-slate-500 hover:text-blue-600'
                             }`}
                     >
                         <i className="fas fa-tint mr-2"></i> Water (kL)
@@ -304,8 +304,8 @@ export default function UsageContent() {
                     >
                         <div
                             className={`w-12 h-12 ${currentType === 'GAS'
-                                    ? 'bg-orange-100 text-orange-600'
-                                    : 'bg-blue-100 text-blue-600'
+                                ? 'bg-orange-100 text-orange-600'
+                                : 'bg-blue-100 text-blue-600'
                                 } rounded-full flex items-center justify-center mb-3`}
                         >
                             <i className={`fas ${tip.icon} text-xl`}></i>

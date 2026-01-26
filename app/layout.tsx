@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Montserrat } from 'next/font/google'
 import './globals.css'
+import AuthProvider from '@/components/AuthProvider'
 
 // Montserrat for clean, modern UI
 const montserrat = Montserrat({
@@ -30,7 +31,9 @@ export default function RootLayout({
                 <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
             </head>
             <body className={`${montserrat.variable} font-sans antialiased bg-slate-50 text-slate-800`}>
-                {children}
+                <AuthProvider>
+                    {children}
+                </AuthProvider>
             </body>
         </html>
     )

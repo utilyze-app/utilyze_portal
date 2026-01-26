@@ -170,7 +170,39 @@ async function main() {
         });
     }
 
-    console.log('✅ Created usage logs');
+    // Create usage logs for Jane's gas account
+    const janeGasUsage = [1500, 2000, 2400, 2300, 1700, 1100]; // MJ
+    for (let i = 0; i < months; i++) {
+        const date = new Date(startDate);
+        date.setMonth(startDate.getMonth() + i);
+
+        await prisma.usageLog.create({
+            data: {
+                accountId: janeGasAccount.id,
+                date: date,
+                value: janeGasUsage[i],
+                unit: 'MJ',
+            },
+        });
+    }
+
+    // Create usage logs for Jane's water account
+    const janeWaterUsage = [12, 13, 11, 13, 15, 17]; // kL
+    for (let i = 0; i < months; i++) {
+        const date = new Date(startDate);
+        date.setMonth(startDate.getMonth() + i);
+
+        await prisma.usageLog.create({
+            data: {
+                accountId: janeWaterAccount.id,
+                date: date,
+                value: janeWaterUsage[i],
+                unit: 'kL',
+            },
+        });
+    }
+
+    console.log('✅ Created usage logs for all users');
     console.log('');
     console.log('🎉 Database seed completed successfully!');
     console.log('');
