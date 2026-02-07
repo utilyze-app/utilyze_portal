@@ -4,12 +4,19 @@ import { useState, useEffect } from 'react';
 import { usePlaidLink } from 'react-plaid-link';
 import { createLinkToken, exchangePublicToken, initiatePayment } from '@/app/actions/finance';
 
+interface ConnectedBankProp {
+    accountId: string | null;
+    bankName: string;
+    mask: string;
+}
+
 interface PaymentModalProps {
     isOpen: boolean;
     onClose: () => void;
     billId: string;
     billAmount: number;
     billType: string;
+    connectedBank?: ConnectedBankProp | null;
     onPaymentSuccess?: () => void;
 }
 
@@ -21,26 +28,51 @@ export default function PaymentModal({
     billId,
     billAmount,
     billType,
+    connectedBank: initialConnectedBank,
     onPaymentSuccess,
 }: PaymentModalProps) {
     const [linkToken, setLinkToken] = useState<string | null>(null);
-    const [connectedBank, setConnectedBank] = useState<any>(null);
+    const [linkTokenLoading, setLinkTokenLoading] = useState(false);
+    const [linkTokenError, setLinkTokenError] = useState<string | null>(null);
+    const [connectedBank, setConnectedBank] = useState<any>(initialConnectedBank || null);
     const [paymentMethod, setPaymentMethod] = useState('');
     const [paymentStage, setPaymentStage] = useState<PaymentStage>('idle');
     const [txHash, setTxHash] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
 
-    // Load link token on mount
+    // Load link token on mount and update connectedBank from prop
     useEffect(() => {
         if (isOpen && !linkToken) {
             loadLinkToken();
         }
-    }, [isOpen]);
+        if (initialConnectedBank) {
+            setConnectedBank({
+                institutionName: initialConnectedBank.bankName,
+                accountName: 'Account',
+                accountMask: initialConnectedBank.mask,
+            });
+            setPaymentMethod('plaid-connected');
+        }
+    }, [isOpen, initialConnectedBank]);
 
     const loadLinkToken = async () => {
-        const result = await createLinkToken();
-        if (result.success && result.linkToken) {
-            setLinkToken(result.linkToken);
+        setLinkTokenLoading(true);
+        setLinkTokenError(null);
+        try {
+            console.log('Creating Plaid link token...');
+            const result = await createLinkToken();
+            console.log('Link token result:', result);
+            if (result.success && result.linkToken) {
+                setLinkToken(result.linkToken);
+            } else {
+                setLinkTokenError(result.error || 'Failed to create link token');
+                console.error('Link token error:', result.error);
+            }
+        } catch (error: any) {
+            console.error('Exception creating link token:', error);
+            setLinkTokenError(error.message || 'Failed to create link token');
+        } finally {
+            setLinkTokenLoading(false);
         }
     };
 
@@ -50,10 +82,11 @@ export default function PaymentModal({
             console.log('Plaid success:', metadata);
             const result = await exchangePublicToken(publicToken);
             if (result.success) {
+                const selectedAccount = metadata.accounts?.[0];
                 setConnectedBank({
                     institutionName: metadata.institution?.name || 'Bank',
-                    accountName: metadata.account?.name || 'Account',
-                    accountMask: metadata.account?.mask || '****',
+                    accountName: selectedAccount?.name || 'Account',
+                    accountMask: selectedAccount?.mask || '****',
                 });
                 setPaymentMethod('plaid-connected');
                 alert(`✅ Successfully connected ${metadata.institution?.name}!`);
@@ -62,10 +95,22 @@ export default function PaymentModal({
     });
 
     const handleConnectBank = () => {
-        if (ready) {
+        console.log('Connect bank clicked - ready:', ready, 'linkToken:', !!linkToken, 'loading:', linkTokenLoading);
+        if (linkTokenLoading) {
+            alert('Loading Plaid Link, please wait...');
+            return;
+        }
+        if (linkTokenError) {
+            alert(`Error loading Plaid: ${linkTokenError}`);
+            return;
+        }
+        if (ready && linkToken) {
             openPlaidLink();
+        } else if (!linkToken) {
+            alert('Plaid Link token not loaded. Retrying...');
+            loadLinkToken();
         } else {
-            alert('Plaid Link is not ready yet. Please try again.');
+            alert('Plaid Link is initializing. Please try again in a moment.');
         }
     };
 
@@ -90,8 +135,9 @@ export default function PaymentModal({
 
             setPaymentStage('converting');
 
-            // Call the server action
-            const result = await initiatePayment(billId);
+            // Call the server action with payment method
+            const paymentMethodType = connectedBank ? 'PLAID_BANK' : paymentMethod.includes('card') ? 'CARD' : 'BANK';
+            const result = await initiatePayment(billId, paymentMethodType);
 
             if (!result.success) {
                 setPaymentStage('error');
@@ -247,11 +293,26 @@ export default function PaymentModal({
                                             <button
                                                 type="button"
                                                 onClick={handleConnectBank}
-                                                className="w-full bg-blue-50 border-2 border-blue-200 text-blue-700 py-3 rounded-lg font-medium hover:bg-blue-100 transition-colors flex items-center justify-center"
+                                                disabled={linkTokenLoading}
+                                                className="w-full bg-blue-50 border-2 border-blue-200 text-blue-700 py-3 rounded-lg font-medium hover:bg-blue-100 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-wait"
                                             >
-                                                <i className="fas fa-university mr-2"></i>
-                                                Connect Bank Account with Plaid
+                                                {linkTokenLoading ? (
+                                                    <>
+                                                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-200 border-t-blue-600 mr-2"></div>
+                                                        Loading Plaid...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <i className="fas fa-university mr-2"></i>
+                                                        Connect Bank Account with Plaid
+                                                    </>
+                                                )}
                                             </button>
+                                            {linkTokenError && (
+                                                <p className="text-xs text-red-500 mt-2 text-center">
+                                                    Error: {linkTokenError}
+                                                </p>
+                                            )}
                                             <p className="text-xs text-slate-500 mt-2 text-center">
                                                 Secure bank connection powered by Plaid
                                             </p>

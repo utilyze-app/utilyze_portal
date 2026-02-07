@@ -1,12 +1,35 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { signOut } from 'next-auth/react';
+import { getCurrentUser } from '@/app/actions/auth';
 
 export default function Sidebar() {
     const pathname = usePathname();
+    const [currentUser, setCurrentUser] = useState<{ name: string; email: string } | null>(null);
+
+    useEffect(() => {
+        loadUser();
+    }, []);
+
+    const loadUser = async () => {
+        const user = await getCurrentUser();
+        if (user) {
+            setCurrentUser({ name: user.name, email: user.email });
+        }
+    };
+
+    const getInitials = (name: string) => {
+        return name
+            .split(' ')
+            .map((n) => n[0])
+            .join('')
+            .toUpperCase()
+            .slice(0, 2);
+    };
 
     const navItems = [
         { name: 'Dashboard', path: '/dashboard', icon: 'fa-home' },
@@ -53,10 +76,10 @@ export default function Sidebar() {
                 <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 bg-slate-900 text-white rounded-full flex items-center justify-center font-bold">
-                            JD
+                            {currentUser ? getInitials(currentUser.name) : '...'}
                         </div>
                         <div>
-                            <p className="text-sm font-bold text-slate-800">John Doe</p>
+                            <p className="text-sm font-bold text-slate-800">{currentUser?.name || 'Loading...'}</p>
                             <p className="text-xs text-slate-500">Cleveland, OH</p>
                         </div>
                     </div>
@@ -72,3 +95,4 @@ export default function Sidebar() {
         </aside>
     );
 }
+

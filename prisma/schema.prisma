@@ -34,6 +34,7 @@ model Account {
   // Plaid/Banking integration fields
   plaidAccessToken String?
   plaidItemId      String?
+  plaidAccountId   String?  // Selected bank account ID from Plaid
   bankName         String?
 
   // Relations
@@ -51,10 +52,12 @@ model Account {
 
 // Bill model - Utility bills with payment status tracking
 model Bill {
-  id        String      @id @default(cuid())
-  accountId String
-  amount    Float       // USD amount
-  status    String      @default("UNPAID")  // "UNPAID", "PENDING_SETTLEMENT", "PAID"
+  id          String      @id @default(cuid())
+  accountId   String
+  amount      Float       // USD amount
+  status      String      @default("UNPAID")  // "UNPAID", "PENDING_SETTLEMENT", "PAID"
+  description String?     // Bill description (e.g., "Quarterly Bill Jul-Sep")
+  issuedDate  DateTime?   // When the bill was issued
   dueDate   DateTime
 
   // Relations
@@ -76,6 +79,8 @@ model PaymentTransaction {
   plaidTransactionId String?                 // Fiat transaction ID from Plaid
   cryptoTxHash       String?                 // Blockchain transaction hash
   status             String                  @default("INITIATED")  // "INITIATED", "FIAT_CONFIRMED", "CRYPTO_SETTLED"
+  paymentMethod      String?                 // "PLAID_BANK", "CARD", etc.
+  amount             Float?                  // Payment amount
 
   // Relations
   bill Bill @relation(fields: [billId], references: [id], onDelete: Cascade)

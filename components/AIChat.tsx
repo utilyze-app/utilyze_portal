@@ -43,17 +43,17 @@ export default function AIChat() {
 
         try {
             // Call AI API (simplified - you can enhance with actual API call)
-            const prompt = `You are a helpful support agent for Utilyze (Australian Gas & Water). 
+            const prompt = `You are a helpful support agent for Utilyze (US Utilities). 
             Answer this customer question: "${text}".
-            - Use Australian spelling (colour, program, metre).
+            - Use US English spelling.
             - If asked about billing, say bills are issued quarterly.
-            - If asked about emergencies (gas leak), say "Call 000 immediately".
+            - If asked about emergencies (gas leak), say "Call 911 immediately".
             - Keep it friendly and short.`;
 
             // Simulate AI response (replace with actual API call)
             await new Promise((resolve) => setTimeout(resolve, 1000));
             const response =
-                "Thanks for your question! For specific billing queries, please check your dashboard or contact our support team at support@utilyze.com.au. Bills are issued quarterly.";
+                "Thanks for your question! For specific billing queries, please check your dashboard or contact our support team at support@utilyze.com. Bills are issued quarterly.";
 
             setMessages((prev) => [...prev, { role: 'assistant', content: response }]);
         } catch (error) {

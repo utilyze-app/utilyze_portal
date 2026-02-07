@@ -96,12 +96,17 @@ export async function exchangePublicToken(publicToken: string) {
             };
         }
 
+        // Get the first bank account from Plaid
+        const plaidBankAccount = accounts[0];
+        const plaidAccountId = plaidBankAccount?.account_id || null;
+
         // Update the account with Plaid credentials
         await prisma.account.update({
             where: { id: userAccount.id },
             data: {
                 plaidAccessToken: accessToken,
                 plaidItemId: itemId,
+                plaidAccountId: plaidAccountId,
                 bankName: bankName,
             },
         });
@@ -110,6 +115,12 @@ export async function exchangePublicToken(publicToken: string) {
             success: true,
             message: 'Bank account connected successfully',
             accountId: userAccount.id,
+            bankAccount: {
+                accountId: plaidAccountId,
+                mask: plaidBankAccount?.mask || '****',
+                name: plaidBankAccount?.name || 'Checking',
+                institutionName: bankName,
+            },
         };
     } catch (error: any) {
         console.error('Error exchanging public token:', error);
@@ -128,7 +139,7 @@ export async function exchangePublicToken(publicToken: string) {
  * C. Mock crypto on-ramp (3-second delay)
  * D. Update bill status and create payment transaction
  */
-export async function initiatePayment(billId: string) {
+export async function initiatePayment(billId: string, paymentMethod: string = 'PLAID_BANK') {
     const session = await auth();
     if (!session?.user?.id) {
         return {
@@ -232,6 +243,8 @@ export async function initiatePayment(billId: string) {
                     billId: billId,
                     cryptoTxHash: mockCryptoTxHash,
                     status: 'CRYPTO_SETTLED',
+                    paymentMethod: paymentMethod,
+                    amount: bill.amount,
                 },
             }),
         ]);
@@ -324,6 +337,7 @@ export async function getDashboardData() {
                     bankName: account.bankName,
                     unpaidBills: account.bills.length,
                     totalDue: account.bills.reduce((sum, bill) => sum + bill.amount, 0),
+                    firstUnpaidBillId: account.bills[0]?.id || null,
                 })),
                 totalBalanceDue,
                 recentUsage: recentUsage.slice(0, 30), // Limit to 30 most recent
@@ -334,6 +348,165 @@ export async function getDashboardData() {
         return {
             success: false,
             error: error.message || 'Failed to fetch dashboard data',
+        };
+    }
+}
+
+/**
+ * Get billing data for the billing page
+ * Returns unpaid bills and connected bank account info
+ */
+export async function getBillingData() {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return {
+            success: false,
+            error: 'Unauthorized',
+        };
+    }
+    const userId = session.user.id;
+
+    try {
+        // Fetch all accounts for the user with unpaid bills
+        const accounts = await prisma.account.findMany({
+            where: { userId },
+            include: {
+                bills: {
+                    where: {
+                        status: {
+                            in: ['UNPAID', 'PENDING_SETTLEMENT'],
+                        },
+                    },
+                    orderBy: {
+                        dueDate: 'asc',
+                    },
+                },
+            },
+        });
+
+        // Get the connected bank info from the first account with Plaid
+        const connectedAccount = accounts.find(a => a.plaidAccessToken);
+        const connectedBank = connectedAccount ? {
+            accountId: connectedAccount.plaidAccountId,
+            bankName: connectedAccount.bankName || 'Connected Bank',
+            mask: connectedAccount.plaidAccountId?.slice(-4) || '****',
+        } : null;
+
+        // Flatten all unpaid bills
+        const unpaidBills = accounts.flatMap(account =>
+            account.bills.map(bill => ({
+                id: bill.id,
+                accountId: account.id,
+                accountType: account.type,
+                amount: bill.amount,
+                status: bill.status,
+                description: bill.description || `${account.type} Bill`,
+                issuedDate: bill.issuedDate?.toISOString() || null,
+                dueDate: bill.dueDate.toISOString(),
+            }))
+        );
+
+        return {
+            success: true,
+            data: {
+                unpaidBills,
+                connectedBank,
+            },
+        };
+    } catch (error: any) {
+        console.error('Error fetching billing data:', error);
+        return {
+            success: false,
+            error: error.message || 'Failed to fetch billing data',
+        };
+    }
+}
+
+/**
+ * Get payment history for the billing page History tab
+ * Returns all payment transactions and paid bills
+ */
+export async function getPaymentHistory() {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return {
+            success: false,
+            error: 'Unauthorized',
+        };
+    }
+    const userId = session.user.id;
+
+    try {
+        // Fetch all accounts for the user
+        const accounts = await prisma.account.findMany({
+            where: { userId },
+            include: {
+                bills: {
+                    include: {
+                        transactions: true,
+                    },
+                    orderBy: {
+                        dueDate: 'desc',
+                    },
+                },
+            },
+        });
+
+        // Build payment history from all bills and transactions
+        const history: Array<{
+            id: string;
+            date: string;
+            serviceType: string;
+            description: string;
+            amount: number;
+            type: 'payment' | 'bill';
+            paymentMethod?: string;
+            status: string;
+        }> = [];
+
+        for (const account of accounts) {
+            for (const bill of account.bills) {
+                // Add the bill itself
+                history.push({
+                    id: bill.id,
+                    date: bill.issuedDate?.toISOString() || bill.dueDate.toISOString(),
+                    serviceType: account.type,
+                    description: bill.description || `${account.type} Bill`,
+                    amount: bill.amount,
+                    type: 'bill',
+                    status: bill.status,
+                });
+
+                // Add payment transactions for this bill
+                for (const tx of bill.transactions) {
+                    history.push({
+                        id: tx.id,
+                        date: tx.createdAt.toISOString(),
+                        serviceType: account.type,
+                        description: 'Payment Received',
+                        amount: tx.amount || bill.amount,
+                        type: 'payment',
+                        paymentMethod: tx.paymentMethod || 'UNKNOWN',
+                        status: tx.status,
+                    });
+                }
+            }
+        }
+
+        // Sort by date descending
+        history.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+        return {
+            success: true,
+            data: {
+                history,
+            },
+        };
+    } catch (error: any) {
+        console.error('Error fetching payment history:', error);
+        return {
+            success: false,
+            error: error.message || 'Failed to fetch payment history',
         };
     }
 }

@@ -125,14 +125,16 @@ export default function LoginPage() {
                         </p>
                     </div>
 
-                    {/* Test Credentials for Development */}
-                    <div className="mt-6 pt-6 border-t border-slate-100">
-                        <p className="text-xs text-slate-500 text-center mb-2">Test Accounts:</p>
-                        <div className="text-xs text-slate-400 space-y-1">
-                            <p>📧 john@example.com / password123</p>
-                            <p>📧 jane@example.com / password123</p>
+                    {/* Test Credentials for Development Only */}
+                    {process.env.NODE_ENV === 'development' && (
+                        <div className="mt-6 pt-6 border-t border-slate-100">
+                            <p className="text-xs text-slate-500 text-center mb-2">Test Accounts:</p>
+                            <div className="text-xs text-slate-400 space-y-1">
+                                <p>📧 john@example.com / password123</p>
+                                <p>📧 jane@example.com / password123</p>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
             </div>
         </div>

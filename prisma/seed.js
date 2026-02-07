@@ -1,10 +1,19 @@
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcrypt';
+const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcrypt');
 
 const prisma = new PrismaClient();
 
 async function main() {
     console.log('🌱 Starting database seed...');
+
+    // Clear existing data first
+    console.log('🗑️ Clearing existing data...');
+    await prisma.paymentTransaction.deleteMany({});
+    await prisma.usageLog.deleteMany({});
+    await prisma.bill.deleteMany({});
+    await prisma.account.deleteMany({});
+    await prisma.user.deleteMany({});
+    console.log('✅ Cleared existing data');
 
     // Create test users with hashed passwords
     const johnPassword = await bcrypt.hash('password123', 10);
@@ -161,7 +170,7 @@ async function main() {
     // Create usage logs for John's gas account
     const startDate = new Date('2025-05-01');
     const months = 6;
-    const gasUsage = [1200, 1800, 2200, 2100, 1500, 900]; // MJ
+    const gasUsage = [1200, 1800, 2200, 2100, 1500, 900];
 
     for (let i = 0; i < months; i++) {
         const date = new Date(startDate);
@@ -177,7 +186,7 @@ async function main() {
         });
     }
 
-    const waterUsage = [15, 14, 13, 14, 16, 18]; // kL
+    const waterUsage = [15, 14, 13, 14, 16, 18];
     for (let i = 0; i < months; i++) {
         const date = new Date(startDate);
         date.setMonth(startDate.getMonth() + i);
@@ -193,7 +202,7 @@ async function main() {
     }
 
     // Create usage logs for Jane's gas account
-    const janeGasUsage = [1500, 2000, 2400, 2300, 1700, 1100]; // MJ
+    const janeGasUsage = [1500, 2000, 2400, 2300, 1700, 1100];
     for (let i = 0; i < months; i++) {
         const date = new Date(startDate);
         date.setMonth(startDate.getMonth() + i);
@@ -209,7 +218,7 @@ async function main() {
     }
 
     // Create usage logs for Jane's water account
-    const janeWaterUsage = [12, 13, 11, 13, 15, 17]; // kL
+    const janeWaterUsage = [12, 13, 11, 13, 15, 17];
     for (let i = 0; i < months; i++) {
         const date = new Date(startDate);
         date.setMonth(startDate.getMonth() + i);

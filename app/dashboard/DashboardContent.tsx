@@ -127,11 +127,15 @@ export default function DashboardContent() {
                                 </div>
                                 <button
                                     onClick={() =>
-                                        handlePayBill('gas', gasAccount.totalDue, 'gas-bill-1')
+                                        gasAccount.firstUnpaidBillId && handlePayBill('gas', gasAccount.totalDue, gasAccount.firstUnpaidBillId)
                                     }
-                                    className="bg-slate-900 hover:bg-black text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                                    disabled={!gasAccount.firstUnpaidBillId || gasAccount.totalDue === 0}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${gasAccount.firstUnpaidBillId && gasAccount.totalDue > 0
+                                            ? 'bg-slate-900 hover:bg-black text-white'
+                                            : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                                        }`}
                                 >
-                                    Pay Now
+                                    {gasAccount.totalDue > 0 ? 'Pay Now' : 'Paid'}
                                 </button>
                             </div>
                             <div className="w-full bg-slate-100 rounded-full h-2 mb-2">
